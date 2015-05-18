@@ -27,20 +27,11 @@ def scenario_co2_limit(data):
     return data
 
 
-def scenario_north_process_caps(data):
-    # change maximum installable capacity
-    pro = data['process']
-    pro.loc[('North', 'Hydro plant'), 'cap-up'] *= 0.5
-    pro.loc[('North', 'Biomass plant'), 'cap-up'] *= 0.25
-    return data
-
-
 def scenario_all_together(data):
     # combine all other scenarios
     data = scenario_stock_prices(data)
     data = scenario_co2_limit(data)
-    data = scenario_north_process_caps(data)
-    return data
+    return data 
 
 
 def prepare_result_directory(result_name):
@@ -64,6 +55,7 @@ def setup_solver(optim, logfile='solver.log'):
         optim.set_options("logfile={}".format(logfile)) 
         # optim.set_options("timelimit=7200")  # seconds
         # optim.set_options("mipgap=5e-4")  # default = 1e-4
+        #optim.set_options("threads=4")
     elif optim.name == 'glpk':
         # reference with list of options
         # execute 'glpsol --help'
@@ -102,7 +94,7 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     log_filename = os.path.join(result_dir, '{}.log').format(sce)
 
     # solve model and read results
-    optim = SolverFactory('glpk')  # cplex, glpk, gurobi, ...
+    optim = SolverFactory('gurobi')  # cplex, glpk, gurobi, ...
     optim = setup_solver(optim, logfile=log_filename)
     result = optim.solve(prob, tee=True)
     prob.load(result)
@@ -131,7 +123,7 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     return prob
 
 if __name__ == '__main__':
-    input_file = 'mimo-example.xlsx'
+    input_file = 'haag15.xlsx'
     result_name = os.path.splitext(input_file)[0]  # cut away file extension
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
@@ -160,7 +152,6 @@ if __name__ == '__main__':
         scenario_base,
         scenario_stock_prices,
         scenario_co2_limit,
-        scenario_north_process_caps,
         scenario_all_together]
 
     for scenario in scenarios:
