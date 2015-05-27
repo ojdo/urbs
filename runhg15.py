@@ -55,7 +55,7 @@ def setup_solver(optim, logfile='solver.log'):
         optim.set_options("logfile={}".format(logfile)) 
         # optim.set_options("timelimit=7200")  # seconds
         # optim.set_options("mipgap=5e-4")  # default = 1e-4
-        #optim.set_options("threads=4")
+        optim.set_options("threads=40")
     elif optim.name == 'glpk':
         # reference with list of options
         # execute 'glpsol --help'
@@ -128,15 +128,15 @@ if __name__ == '__main__':
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    (offset, length) = (5000, 10*24)  # time step selection
-    timesteps = range(offset, offset+length+1)
+    timesteps = range(0, 8761)
     
     # plotting timesteps
+    plot_length = 24*7  
     periods = {
-        #'spr': range(1000, 1000+24*7),
-        #'sum': range(3000, 3000+24*7),
-        'aut': range(5000, 5000+24*7),
-        #'win': range(7000, 7000+24*7),
+        'spr': range(1000, 1000 + plot_length + 1),
+        'sum': range(3000, 3000 + plot_length + 1),
+        'aut': range(5000, 5000 + plot_length + 1),
+        'win': range(7000, 7000 + plot_length + 1),
     }
     
     # add or change plot colors
