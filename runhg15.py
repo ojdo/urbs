@@ -12,26 +12,21 @@ def scenario_base(data):
     return data
 
 
-def scenario_stock_prices(data):
-    # change stock commodity prices
-    co = data['commodity']
-    stock_commodities_only = (co.index.get_level_values('Type') == 'Stock')
-    co.loc[stock_commodities_only, 'price'] *= 1.5
+def scenario_heat_pump_expensive(data):
+    """ heat pumps deactivated """
+    pro = data['process']
+    heat_pumps = (pro.index.get_level_values('Process').isin([
+                  'Heat pump domestic', 'Heat pump plant']))
+    pro.loc[heat_pumps, 'inv-cost'] *= 50.0
     return data
 
 
-def scenario_co2_limit(data):
-    # change global CO2 limit
-    hacks = data['hacks']
-    hacks.loc['Global CO2 limit', 'Value'] *= 0.05
+def scneario_dh_cheap(data):
+    """ district heating transmission 50% cheaper """
+    tra = data['transmission']
+    district_heating = (tra.index.get_level_values('Transmission') == 'dh')
+    tra.loc[district_heating, 'inv-cost'] *= 0.5
     return data
-
-
-def scenario_all_together(data):
-    # combine all other scenarios
-    data = scenario_stock_prices(data)
-    data = scenario_co2_limit(data)
-    return data 
 
 
 def prepare_result_directory(result_name):
@@ -128,31 +123,52 @@ if __name__ == '__main__':
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    timesteps = range(0, 8761)
+    timesteps = range(4999, 5200)
     
     # plotting timesteps
     plot_length = 24*7  
     periods = {
-        'spr': range(1000, 1000 + plot_length + 1),
-        'sum': range(3000, 3000 + plot_length + 1),
+        #'spr': range(1000, 1000 + plot_length + 1),
+        #'sum': range(3000, 3000 + plot_length + 1),
         'aut': range(5000, 5000 + plot_length + 1),
-        'win': range(7000, 7000 + plot_length + 1),
+        #'win': range(7000, 7000 + plot_length + 1),
     }
     
-    # add or change plot colors
+    # add or change plot colors as (r, g, b) tuples (range 0-255 each)
     my_colors = {
-        'South': (230, 200, 200),
-        'Mid': (200, 230, 200),
-        'North': (200, 200, 230)}
+        'Alpenstrasse': (215,25,28),
+        'Diezmanning': (227,74,51),
+        'Einzelhandel': (240,124,74),
+        'Moosham': (253,174,97),
+        'Nord': (253,201,128),
+        'Pipeline': (254,228,159),
+        'Rainbachstrasse': (255,255,191),
+        'Reiterstrasse': (227,243,182),
+        'Schletter': (199,232,173),
+        'Suedwesten': (171,221,164),
+        'Umspannwerk': (128,191,171),
+        'Zentrum': (85,161,178),
+        'District heating plant': (184, 81, 88),
+        'Elec heating domestic': (233, 157, 126),
+        'Gas power plant': (166, 116, 115),
+        'Gas heating plant': (120, 81, 80),
+        'Gas heating domestic': (116, 66, 65),
+        'Heat pump domestic': (252, 226, 148),
+        'Heat pump plant': (252, 217, 116),
+        'Photovoltaics': (226, 126, 85),
+        'Slack heating plant': (196, 42, 163),
+        'Slack power plant': (196, 42, 163),
+        'Transformer': (235, 154, 96),
+        'Wind park': (0, 82, 147),
+    }
     for country, color in my_colors.iteritems():
         urbs.COLORS[country] = color
 
     # select scenarios to be run
     scenarios = [
         scenario_base,
-        scenario_stock_prices,
-        scenario_co2_limit,
-        scenario_all_together]
+        scneario_dh_cheap,
+        scenario_heat_pump_expensive]
 
     for scenario in scenarios:
         prob = run_scenario(input_file, timesteps, scenario, 
