@@ -123,15 +123,15 @@ if __name__ == '__main__':
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    timesteps = range(4999, 5200)
+    timesteps = range(0,8761)
     
     # plotting timesteps
     plot_length = 24*7  
     periods = {
-        #'spr': range(1000, 1000 + plot_length + 1),
-        #'sum': range(3000, 3000 + plot_length + 1),
+        'spr': range(1000, 1000 + plot_length + 1),
+        'sum': range(3000, 3000 + plot_length + 1),
         'aut': range(5000, 5000 + plot_length + 1),
-        #'win': range(7000, 7000 + plot_length + 1),
+        'win': range(7000, 7000 + plot_length + 1),
     }
     
     # add or change plot colors as (r, g, b) tuples (range 0-255 each)
