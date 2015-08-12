@@ -22,6 +22,16 @@ def scenario_no_supim(data):
     return data
 
 
+def scenario_supim_expensive(data):
+    # make supply intermittent processes expensive
+    pro = data['process']
+    supim_processes = (pro.index.get_level_values('Process').isin([
+                  'Photovoltaics', 'Wind park']))
+    pro.loc[supim_processes, 'inv-cost'] *= 3
+    pro.loc[supim_processes, 'fix-cost'] *= 3
+    return data
+
+
 def scenario_heat_pump_expensive(data):
     """ heat pump variable costs increased 50-fold to force other """
     pro = data['process']
@@ -42,6 +52,9 @@ def scenario_cheap_battery(data):
     sto.loc[battery, 'fix-cost-p'] *= 0.10
     sto.loc[battery, 'var-cost-c'] *= 0.10
     sto.loc[battery, 'var-cost-p'] *= 0.10
+    pro = data['process']
+    pro['inst-cap'] = 0
+    pro['cap-lo'] = 0
     return data
 
 
@@ -66,7 +79,7 @@ def setup_solver(optim, logfile='solver.log'):
         optim.set_options("logfile={}".format(logfile)) 
         # optim.set_options("timelimit=7200")  # seconds
         # optim.set_options("mipgap=5e-4")  # default = 1e-4
-        optim.set_options("threads=40")
+        optim.set_options("threads=48")
     elif optim.name == 'glpk':
         # reference with list of options
         # execute 'glpsol --help'
@@ -111,10 +124,10 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     prob.load(result)
 
     # write report to spreadsheet
-    urbs.report(
-        prob,
-        os.path.join(result_dir, '{}-{}.xlsx').format(sce, now),
-        prob.com_demand, prob.sit)
+    #urbs.report(
+    #    prob,
+    #    os.path.join(result_dir, '{}-{}.xlsx').format(sce, now),
+    #    prob.com_demand, prob.sit)
 
     # store optimisation problem for later re-analysis
     urbs.save(
@@ -180,6 +193,7 @@ if __name__ == '__main__':
     scenarios = [
         scenario_base,
         scenario_no_supim,
+        scenario_supim_expensive,
         scenario_cheap_battery,
         scenario_heat_pump_expensive]
 
