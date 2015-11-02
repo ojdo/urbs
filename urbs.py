@@ -153,6 +153,9 @@ def create_model(data, timesteps=None, dt=1):
     # process input/output ratios
     m.r_in = m.process_commodity.xs('In', level='Direction')['ratio']
     m.r_out = m.process_commodity.xs('Out', level='Direction')['ratio']
+    
+    # determine proportional processes
+    m.pro_prop = m.process_commodity.query('proportional == 1')
 
     # Sets
     # ====
@@ -269,6 +272,16 @@ def create_model(data, timesteps=None, dt=1):
         initialize=commodity_subset(m.com_tuples, 'Env'),
         doc='Commodities that (might) have a maximum creation limit')
 
+    # proportional process type subsets
+    m.pro_proportional_tuples = pyyomo.Set(
+        within=m.sit*m.pro*m.com,
+        initialize=[(site, process, commodity)
+                    for (site, process) in m.pro_tuples
+                    for (pro, commodity, _) in m.pro_prop.index
+                    if process == pro]
+        doc='Process outputs that must follow the demand, e.g. '
+            '(Mid,Domestic heating,Heat)')
+
     # Parameters
 
     # weight = length of year (hours) / length of simulation (hours)
@@ -330,6 +343,11 @@ def create_model(data, timesteps=None, dt=1):
         m.tm, m.pro_tuples, m.com,
         within=pyomo.NonNegativeReals,
         doc='Power flow out of process (MW) per timestep')
+    m.delta_pro = pyomo.Var(
+        m.pro_proportional_tuples,
+        within=pyomo.NonNegativeReals,
+        bounds=(0,1),
+        doc='Fraction of demand that process output must meet (0 to 1)')
 
     # transmission
     m.cap_tra = pyomo.Var(
@@ -450,6 +468,10 @@ def create_model(data, timesteps=None, dt=1):
         m.pro_input_tuples,
         rule=res_sell_buy_symmetry_rule,
         doc='total power connection capacity must be symmetric in both directions')
+    m.res_proportional_process = pyomo.Constraint(
+        m.tm, m.pro_proportional_tuples,
+        rule=res_proportional_process_rule,
+        doc='process output must meet (variable, but constant) share of demand')
 
     # transmission
     m.def_transmission_capacity = pyomo.Constraint(
@@ -722,6 +744,11 @@ def res_sell_buy_symmetry_rule(m, sit_in, pro_in, coin):
                         m.cap_pro[sit_in, sell_pro])
     else:
         return pyomo.Constraint.Skip
+
+def res_proportional_process_rule(m, tm, sit, pro, com):
+    return (m.e_pro_out[tm, sit, pro, com] ==
+            m.demand.loc[tm][sit, com] *
+            m.delta_pro[sit, pro, com])
 
 # transmission
 
