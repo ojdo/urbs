@@ -273,13 +273,13 @@ def create_model(data, timesteps=None, dt=1):
         doc='Commodities that (might) have a maximum creation limit')
 
     # proportional process type subsets
-    m.pro_proportional_tuples = pyyomo.Set(
+    m.pro_proportional_tuples = pyomo.Set(
         within=m.sit*m.pro*m.com,
         initialize=[(site, process, commodity)
                     for (site, process) in m.pro_tuples
                     for (pro, commodity, _) in m.pro_prop.index
-                    if process == pro]
-        doc='Process outputs that must follow the demand, e.g. '
+                    if process == pro],
+        doc='Process outputs that must follow the demand, e.g.'
             '(Mid,Domestic heating,Heat)')
 
     # Parameters
@@ -346,7 +346,6 @@ def create_model(data, timesteps=None, dt=1):
     m.delta_pro = pyomo.Var(
         m.pro_proportional_tuples,
         within=pyomo.NonNegativeReals,
-        bounds=(0,1),
         doc='Fraction of demand that process output must meet (0 to 1)')
 
     # transmission
