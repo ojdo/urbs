@@ -12,20 +12,73 @@ def scenario_base(data):
     return data
 
 
-def scenario_heat_pump_expensive(data):
-    """ heat pumps deactivated """
+def scenario_no_supim(data):
+    # don't allow supply intermittent processes
     pro = data['process']
-    heat_pumps = (pro.index.get_level_values('Process').isin([
-                  'Heat pump domestic', 'Heat pump plant']))
-    pro.loc[heat_pumps, 'inv-cost'] *= 50.0
+    supim_processes = (pro.index.get_level_values('Process').isin([
+                  'Photovoltaics', 'Wind park']))
+    pro.loc[supim_processes, 'cap-up'] = 0
+    pro.loc[supim_processes, 'cap-lo'] = 0
+    pro.loc[supim_processes, 'inst-cap'] = 0
     return data
 
 
-def scneario_dh_cheap(data):
-    """ district heating transmission 50% cheaper """
-    tra = data['transmission']
-    district_heating = (tra.index.get_level_values('Transmission') == 'dh')
-    tra.loc[district_heating, 'inv-cost'] *= 0.5
+def scenario_supim_expensive(data):
+    # make supply intermittent processes expensive
+    pro = data['process']
+    supim_processes = (pro.index.get_level_values('Process').isin([
+                  'Photovoltaics', 'Wind park']))
+    pro.loc[supim_processes, 'inv-cost'] *= 3
+    pro.loc[supim_processes, 'fix-cost'] *= 3
+    return data
+
+
+def scenario_heat_pump_expensive(data):
+    """ heat pump variable costs increased 10-fold to force other """
+    pro = data['process']
+    heat_pumps = (pro.index.get_level_values('Process').isin([
+                  'Heat pump domestic', 'Heat pump plant']))
+    pro.loc[heat_pumps, 'var-cost'] *= 10.0
+    return data
+
+
+def scenario_cheap_battery(data):
+    """ make storage cheap by reducing inv-cost by 95%, 
+    fix and var-cost by 90% for batteries. Additionally, remove
+    all pre-installed capacities for greenfield planning """
+    sto = data['storage']
+    battery = (sto.index.get_level_values('Storage') == 'Battery')
+    sto.loc[battery, 'inv-cost-c'] *= 0.05
+    sto.loc[battery, 'inv-cost-p'] *= 0.05
+    sto.loc[battery, 'fix-cost-c'] *= 0.10
+    sto.loc[battery, 'fix-cost-p'] *= 0.10
+    sto.loc[battery, 'var-cost-c'] *= 0.10
+    sto.loc[battery, 'var-cost-p'] *= 0.10
+    pro = data['process']
+    pro['inst-cap'] = 0
+    pro['cap-lo'] = 0
+    return data
+
+
+def scenario_pv_to_elec_peak_demand(data):
+    """ pv installation raises to the level of peak demand """
+    pro = data['process']
+    dem = data['demand']
+    
+    # pull peak demand for commodity electricity
+    # then recreate a (Site, Process) MultiIndex that conforms
+    # to the format in DataFrame pro ...
+    dmax = dem.max().unstack()['Elec'].reset_index()
+    dmax = dmax.rename(columns={'index': 'Site'})
+    dmax['Process'] = 'Photovoltaics'
+    dmax = dmax.set_index(['Site', 'Process'])
+    
+    # ... and
+    pro.loc[(slice(None), 'Photovoltaics'), 'cap-lo'] = dmax['Elec'] * 1.0
+    pro.loc[(slice(None), 'Photovoltaics'), 'cap-up'] = dmax['Elec'] * 1.0
+    
+    # for clarity, forbid wind parks
+    pro.loc[(slice(None), 'Wind park'), 'cap-up'] = 0
     return data
 
 
@@ -123,15 +176,15 @@ if __name__ == '__main__':
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    timesteps = range(0,8761)
+    timesteps = range(1000,1200)
     
     # plotting timesteps
-    plot_length = 24*7  
+    plot_length = 24*7   
     periods = {
-        'spr': range(1000, 1000 + plot_length + 1),
-        'sum': range(3000, 3000 + plot_length + 1),
-        'aut': range(5000, 5000 + plot_length + 1),
-        'win': range(7000, 7000 + plot_length + 1),
+        'spr': range(1001, 1001 + plot_length + 1),
+#        'sum': range(3000, 3000 + plot_length + 1),
+#        'aut': range(5000, 5000 + plot_length + 1),
+#        'win': range(7000, 7000 + plot_length + 1),
     }
     
     # add or change plot colors as (r, g, b) tuples (range 0-255 each)
@@ -167,9 +220,12 @@ if __name__ == '__main__':
     # select scenarios to be run
     scenarios = [
         scenario_base,
-        scneario_dh_cheap,
-        scenario_heat_pump_expensive]
+        scenario_no_supim,
+        scenario_supim_expensive,
+        scenario_cheap_battery,
+        scenario_heat_pump_expensive,
+        scenario_pv_to_elec_peak_demand]
 
-    for scenario in scenarios:
+    for scenario in scenarios[:1]:
         prob = run_scenario(input_file, timesteps, scenario, 
                             result_dir, plot_periods=periods)

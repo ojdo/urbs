@@ -33,17 +33,18 @@ def scenario_supim_expensive(data):
 
 
 def scenario_heat_pump_expensive(data):
-    """ heat pump variable costs increased 50-fold to force other """
+    """ heat pump variable costs increased 10-fold to force other """
     pro = data['process']
     heat_pumps = (pro.index.get_level_values('Process').isin([
                   'Heat pump domestic', 'Heat pump plant']))
-    pro.loc[heat_pumps, 'var-cost'] *= 50.0
+    pro.loc[heat_pumps, 'var-cost'] *= 10.0
     return data
 
 
 def scenario_cheap_battery(data):
     """ make storage cheap by reducing inv-cost by 95%, 
-    fix and var-cost by 90% for batteries """
+    fix and var-cost by 90% for batteries. Additionally, remove
+    all pre-installed capacities for greenfield planning """
     sto = data['storage']
     battery = (sto.index.get_level_values('Storage') == 'Battery')
     sto.loc[battery, 'inv-cost-c'] *= 0.05
@@ -57,6 +58,26 @@ def scenario_cheap_battery(data):
     pro['cap-lo'] = 0
     return data
 
+
+def scenario_pv_to_elec_peak_demand(data):
+    """ pv installation raises to the level of peak demand """
+    pro = data['process']
+    dem = data['demand']
+    
+    # pull peak demand for commodity electricity
+    # then recreate a (Site, Process) MultiIndex that conforms
+    # to the format in DataFrame pro ...
+    dmax = dem.max().unstack()['Elec'].reset_index()
+    dmax = dmax.rename(columns={'index': 'Site'})
+    dmax['Process'] = 'Photovoltaics'
+    dmax = dmax.set_index(['Site', 'Process'])
+    
+    # ... and 
+    pro.loc[(slice(None), 'Photovoltaics'), 'cap-lo'] = dmax['Elec'] * 1.0
+    
+    # for clarity, forbid wind parks
+    pro.loc[(slice(None), 'Wind park'), 'cap-up'] = 0
+    return data
 
 def prepare_result_directory(result_name):
     """ create a time stamped directory within the result folder """
@@ -124,10 +145,10 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     prob.load(result)
 
     # write report to spreadsheet
-    #urbs.report(
-    #    prob,
-    #    os.path.join(result_dir, '{}-{}.xlsx').format(sce, now),
-    #    prob.com_demand, prob.sit)
+    urbs.report(
+        prob,
+        os.path.join(result_dir, '{}-{}.xlsx').format(sce, now),
+        prob.com_demand, prob.sit)
 
     # store optimisation problem for later re-analysis
     urbs.save(
@@ -143,12 +164,12 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     return prob
 
 if __name__ == '__main__':
-    input_file = 'rivhg15.pgz'
+    input_file = 'rivhg15_rivus_base.pgz'
     result_name = os.path.splitext(input_file)[0]  # cut away file extension
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    timesteps = range(0,8761)
+    timesteps = range(8671)
     
     # plotting timesteps
     plot_length = 24*7  
@@ -195,8 +216,9 @@ if __name__ == '__main__':
         scenario_no_supim,
         scenario_supim_expensive,
         scenario_cheap_battery,
-        scenario_heat_pump_expensive]
+        scenario_heat_pump_expensive,
+        scenario_pv_to_elec_peak_demand]
 
-    for scenario in scenarios:
+    for scenario in scenarios[:2]:
         prob = run_scenario(input_file, timesteps, scenario, 
                             result_dir, plot_periods=periods)
