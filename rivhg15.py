@@ -57,7 +57,29 @@ def scenario_cheap_battery(data):
     pro['inst-cap'] = 0
     pro['cap-lo'] = 0
     return data
-
+    
+def scenario_umspannwerk_expensive(data):
+    """ double costs for buying electricity from outside """
+    com = data['commodity']
+    com.loc[('Umspannwerk', 'Grid', 'Stock'),'price'] *= 5
+    return data
+    
+def scenario_unlimit_pv_forbid_wind(data):
+    """ increase capacity limit for pv """
+    pro = data['process']
+    pro.loc[(slice(None), 'Photovoltaics'), 'cap-up'] *= 100
+    pro.loc[(slice(None), 'Wind park'), 'cap-up'] = 0
+    return data
+    
+def scenario_autarky(data):
+    """ combine three scenarios for maximum self sufficiency.
+    This scenario combines 'cheap battery', 'umspannwerk expensive' and 
+    'unlimit PV, forbid wind' in order to push the system towards a 
+    radically different """
+    data = scenario_cheap_battery(data)
+    data = scenario_umspannwerk_expensive(data)
+    data = scenario_unlimit_pv_forbid_wind(data)
+    return data
 
 def scenario_pv_to_elec_peak_demand(data):
     """ pv installation raises to the level of peak demand """
@@ -74,6 +96,7 @@ def scenario_pv_to_elec_peak_demand(data):
     
     # ... and 
     pro.loc[(slice(None), 'Photovoltaics'), 'cap-lo'] = dmax['Elec'] * 1.0
+    pro.loc[(slice(None), 'Photovoltaics'), 'cap-up'] = dmax['Elec'] * 10.0
     
     # for clarity, forbid wind parks
     pro.loc[(slice(None), 'Wind park'), 'cap-up'] = 0
@@ -82,7 +105,7 @@ def scenario_pv_to_elec_peak_demand(data):
 def prepare_result_directory(result_name):
     """ create a time stamped directory within the result folder """
     # timestamp for result directory
-    now = datetime.now().strftime('%Y%m%dT%H%M')
+    now = datetime.now().strftime('%y%m%dT%H%M')
 
     # create result directory if not existent
     result_dir = os.path.join('result', '{}-{}'.format(result_name, now))
@@ -212,13 +235,9 @@ if __name__ == '__main__':
 
     # select scenarios to be run
     scenarios = [
-        scenario_base,
-        scenario_no_supim,
-        scenario_supim_expensive,
-        scenario_cheap_battery,
-        scenario_heat_pump_expensive,
+        scenario_autarky,
         scenario_pv_to_elec_peak_demand]
 
-    for scenario in scenarios[:2]:
+    for scenario in scenarios:
         prob = run_scenario(input_file, timesteps, scenario, 
                             result_dir, plot_periods=periods)

@@ -28,7 +28,7 @@ def scenario_bat_05(data):
     return data
 
 def scenario_bat_10(data):
-    """ make storage cheap by reducing inv-cost by 95%, 
+    """ make storage cheap by reducing inv-cost by 90%, 
     fix and var-cost by 90% for batteries. Additionally, remove
     all pre-installed capacities for greenfield planning """
     sto = data['storage']
@@ -45,7 +45,7 @@ def scenario_bat_10(data):
     return data
 
 def scenario_bat_15(data):
-    """ make storage cheap by reducing inv-cost by 95%, 
+    """ make storage cheap by reducing inv-cost by 85%, 
     fix and var-cost by 90% for batteries. Additionally, remove
     all pre-installed capacities for greenfield planning """
     sto = data['storage']
@@ -62,7 +62,7 @@ def scenario_bat_15(data):
     return data
 
 def scenario_bat_20(data):
-    """ make storage cheap by reducing inv-cost by 95%, 
+    """ make storage cheap by reducing inv-cost by 80%, 
     fix and var-cost by 90% for batteries. Additionally, remove
     all pre-installed capacities for greenfield planning """
     sto = data['storage']
@@ -78,6 +78,56 @@ def scenario_bat_20(data):
     pro['cap-lo'] = 0
     return data
 
+def scenario_bat_25(data):
+    """ make storage cheap by reducing inv-cost by 75%, 
+    fix and var-cost by 90% for batteries. Additionally, remove
+    all pre-installed capacities for greenfield planning """
+    sto = data['storage']
+    battery = (sto.index.get_level_values('Storage') == 'Battery')
+    sto.loc[battery, 'inv-cost-c'] *= 0.25
+    sto.loc[battery, 'inv-cost-p'] *= 0.25
+    sto.loc[battery, 'fix-cost-c'] *= 0.25
+    sto.loc[battery, 'fix-cost-p'] *= 0.25
+    sto.loc[battery, 'var-cost-c'] *= 0.25
+    sto.loc[battery, 'var-cost-p'] *= 0.25
+    pro = data['process']
+    pro['inst-cap'] = 0
+    pro['cap-lo'] = 0
+    return data
+
+def scenario_bat_50(data):
+    """ make storage cheap by reducing inv-cost by 50%, 
+    fix and var-cost by 90% for batteries. Additionally, remove
+    all pre-installed capacities for greenfield planning """
+    sto = data['storage']
+    battery = (sto.index.get_level_values('Storage') == 'Battery')
+    sto.loc[battery, 'inv-cost-c'] *= 0.50
+    sto.loc[battery, 'inv-cost-p'] *= 0.50
+    sto.loc[battery, 'fix-cost-c'] *= 0.50
+    sto.loc[battery, 'fix-cost-p'] *= 0.50
+    sto.loc[battery, 'var-cost-c'] *= 0.50
+    sto.loc[battery, 'var-cost-p'] *= 0.50
+    pro = data['process']
+    pro['inst-cap'] = 0
+    pro['cap-lo'] = 0
+    return data
+
+def scenario_bat_75(data):
+    """ make storage cheap by reducing inv-cost by 25%, 
+    fix and var-cost by 90% for batteries. Additionally, remove
+    all pre-installed capacities for greenfield planning """
+    sto = data['storage']
+    battery = (sto.index.get_level_values('Storage') == 'Battery')
+    sto.loc[battery, 'inv-cost-c'] *= 0.75
+    sto.loc[battery, 'inv-cost-p'] *= 0.75
+    sto.loc[battery, 'fix-cost-c'] *= 0.75
+    sto.loc[battery, 'fix-cost-p'] *= 0.75
+    sto.loc[battery, 'var-cost-c'] *= 0.75
+    sto.loc[battery, 'var-cost-p'] *= 0.75
+    pro = data['process']
+    pro['inst-cap'] = 0
+    pro['cap-lo'] = 0
+    return data
 
 def prepare_result_directory(result_name):
     """ create a time stamped directory within the result folder """
@@ -169,15 +219,15 @@ if __name__ == '__main__':
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    timesteps = range(999,1200)
+    timesteps = range(8761)
     
     # plotting timesteps
     plot_length = 24*7  
     periods = {
         'spr': range(1000, 1000 + plot_length + 1),
-        #'sum': range(3000, 3000 + plot_length + 1),
-        #'aut': range(5000, 5000 + plot_length + 1),
-        #'win': range(7000, 7000 + plot_length + 1),
+        'sum': range(3000, 3000 + plot_length + 1),
+        'aut': range(5000, 5000 + plot_length + 1),
+        'win': range(7000, 7000 + plot_length + 1),
     }
     
     # add or change plot colors as (r, g, b) tuples (range 0-255 each)
@@ -213,11 +263,10 @@ if __name__ == '__main__':
     # select scenarios to be run
     scenarios = [
         scenario_base,
-        scenario_bat_05,
-        scenario_bat_10,
-        scenario_bat_15,
-        scenario_bat_20]
+        scenario_bat_25,
+        scenario_bat_50,
+        scenario_bat_75]
 
-    for scenario in scenarios[-1:]:
+    for scenario in scenarios:
         prob = run_scenario(input_file, timesteps, scenario, 
                             result_dir, plot_periods=periods)
