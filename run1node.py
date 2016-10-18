@@ -121,7 +121,7 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     return prob
 
 if __name__ == '__main__':
-    input_file = 'mimo-example.xlsx'
+    input_file = '1node.xlsx'
     result_name = os.path.splitext(input_file)[0]  # cut away file extension
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
