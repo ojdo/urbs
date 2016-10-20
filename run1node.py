@@ -153,14 +153,18 @@ if __name__ == '__main__':
     # select scenarios to be run
     scenarios = [
         #                  name     pv   bat  gen  fuel
+        # High battery cost, PV high to low
         scenario_generator('s01', 2000, 1000, 200, 0.09),
         scenario_generator('s02', 1500, 1000, 200, 0.09),
         scenario_generator('s03', 1000, 1000, 200, 0.09),
         scenario_generator('s04',  500, 1000, 200, 0.09),
+        # Medium battery cost, PV medium to low
         scenario_generator('s05', 1000,  500, 200, 0.09),
         scenario_generator('s06',  500,  500, 200, 0.09),
-        scenario_generator('s07', 1000,  500, 200, 0.09),
-        scenario_generator('s08',  500,  500, 200, 0.09),
+        # Low battery cost, PV medium to low
+        scenario_generator('s07', 1000,  200, 200, 0.09),
+        scenario_generator('s08',  500,  200, 200, 0.09),
+        # High fuel cost scenarios, PV and battery medium
         scenario_generator('s09',  500,  500, 200, 0.18),
         scenario_generator('s10',  500,  500, 200, 0.27)]
 

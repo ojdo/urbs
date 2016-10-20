@@ -61,9 +61,7 @@ def compare_scenarios(result_files, output_filename):
                       .replace('_', ' ') # replace _ with spaces
                       .replace('.xlsx', '') # drop file extension
                       .replace('scenario ', '') # drop 'scenario ' prefix
-                      for rf in result_files]
-    #scenario_names = [s[0:s.find('-')] for s in scenario_names] # drop everything after first '-'
-    
+                      for rf in result_files]    
     
     # find base scenario and put at first position
     try:
@@ -122,10 +120,10 @@ def compare_scenarios(result_files, output_filename):
     created.index.name = 'Process'
     used_processes = (created.sum(axis=1) > 0)
     created = created[used_processes].sort_index().transpose()
-    created = created
+    created = created /1e3
     
     sto_sums = esums.loc[('Storage', 'Retrieved')].sort_index()
-    sto_sums = sto_sums
+    sto_sums = sto_sums / 1e3
     sto_sums.index = sto_sums.index.droplevel(1)
     sto_sums.name = 'Battery'
     
@@ -181,8 +179,8 @@ def compare_scenarios(result_files, output_filename):
                  linewidth=0)
     
     ax0.set_xlabel('Total costs (EUR/a)')
-    ax1.set_xlabel('Total energy produced (kWh)')
-    ax2.set_xlabel('Retrieved energy (kWh)')
+    ax1.set_xlabel('Total energy produced (MWh)')
+    ax2.set_xlabel('Retrieved energy (MWh)')
     
     for ext in ['png', 'pdf']:
         fig.savefig('{}.{}'.format(output_filename, ext),
