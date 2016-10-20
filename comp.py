@@ -111,7 +111,7 @@ def compare_scenarios(result_files, output_filename):
     costs.columns = costs.columns.droplevel(1)
     costs.index.name = 'Cost type'
     costs = costs.sort_index().transpose()
-    costs = costs / 1e3
+    costs = costs
     costs = costs.loc[:, costs.sum() > 0]
     
     # sum up created energy over all locations, but keeping scenarios (level=0)
@@ -122,10 +122,10 @@ def compare_scenarios(result_files, output_filename):
     created.index.name = 'Process'
     used_processes = (created.sum(axis=1) > 0)
     created = created[used_processes].sort_index().transpose()
-    created = created / 1e3
+    created = created
     
     sto_sums = esums.loc[('Storage', 'Retrieved')].sort_index()
-    sto_sums = sto_sums / 1e3
+    sto_sums = sto_sums
     sto_sums.index = sto_sums.index.droplevel(1)
     sto_sums.name = 'Battery'
     
@@ -163,9 +163,15 @@ def compare_scenarios(result_files, output_filename):
         ax.yaxis.set_ticks_position('none')
         
         # group 1,000,000 with commas
-        group_thousands_and_skip_zero = tkr.FuncFormatter(
-            lambda x, pos: '' if int(x) == 0 else '{:0,d}'.format(int(x)))
-        ax.xaxis.set_major_formatter(group_thousands_and_skip_zero)
+        xmin, xmax = ax.get_xlim()
+        if xmax > 90:
+            group_thousands_and_skip_zero = tkr.FuncFormatter(
+                lambda x, pos: '' if int(x) == 0 else '{:0,d}'.format(int(x)))
+            ax.xaxis.set_major_formatter(group_thousands_and_skip_zero)
+        else:
+            skip_lowest = tkr.FuncFormatter(
+                lambda x, pos: '' if pos == 0 else x)
+            ax.xaxis.set_major_formatter(skip_lowest)
     
         # legend
         lg = ax.legend(frameon=False, loc='lower center',
@@ -174,9 +180,9 @@ def compare_scenarios(result_files, output_filename):
         plt.setp(lg.get_patches(), edgecolor=urbs.to_color('Decoration'),
                  linewidth=0)
     
-    ax0.set_xlabel('Total costs (1,000 EUR/a)')
-    ax1.set_xlabel('Total energy produced (MWh)')
-    ax2.set_xlabel('Retrieved energy (MWh)')
+    ax0.set_xlabel('Total costs (EUR/a)')
+    ax1.set_xlabel('Total energy produced (kWh)')
+    ax2.set_xlabel('Retrieved energy (kWh)')
     
     for ext in ['png', 'pdf']:
         fig.savefig('{}.{}'.format(output_filename, ext),
