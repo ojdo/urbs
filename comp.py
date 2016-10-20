@@ -114,13 +114,21 @@ def compare_scenarios(result_files, output_filename):
     
     # sum up created energy over all locations, but keeping scenarios (level=0)
     # make index name 'Commodity' nicer for plot
-    # drop all unused commodities and sort/transpose
+    # drop all unused commodities and sort/transpose (*)
     # convert MWh to GWh
     created = esums.loc['Created'].sum(axis=1, level=0)
     created.index.name = 'Process'
-    used_processes = (created.sum(axis=1) > 0)
+    used_processes = (created.sum(axis=1) > 0.1) 
     created = created[used_processes].sort_index().transpose()
     created = created /1e3
+    # (*) reasoning for using '0.1' as threshold instead of '0':
+    # Variable cost/fuel price for Slack commodity was chosen slightly too low.
+    # Therefore, slack is barely viable choice in 1 timestep in s01 and s02 and 
+    # used to cover about 0.05 kWh of load. For graphical cosmetics, this
+    # is dropped to not have the process, whose sole purpose is debugging,
+    # spoil result graphics. In general, one should increase var-cost/price
+    # of slack commodity and process further, until it is not used in any 
+    # scenario.
     
     sto_sums = esums.loc[('Storage', 'Retrieved')].sort_index()
     sto_sums = sto_sums / 1e3
