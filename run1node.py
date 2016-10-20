@@ -6,41 +6,30 @@ from datetime import datetime
 from pyomo.opt.base import SolverFactory
 
 # SCENARIOS
-def scenario_base(data):
-    # do nothing
-    return data
 
-
-def scenario_stock_prices(data):
-    # change stock commodity prices
-    co = data['commodity']
-    stock_commodities_only = (co.index.get_level_values('Type') == 'Stock')
-    co.loc[stock_commodities_only, 'price'] *= 1.5
-    return data
-
-
-def scenario_co2_limit(data):
-    # change global CO2 limit
-    hacks = data['hacks']
-    hacks.loc['Global CO2 limit', 'Value'] *= 0.05
-    return data
-
-
-def scenario_north_process_caps(data):
-    # change maximum installable capacity
-    pro = data['process']
-    pro.loc[('North', 'Hydro plant'), 'cap-up'] *= 0.5
-    pro.loc[('North', 'Biomass plant'), 'cap-up'] *= 0.25
-    return data
-
-
-def scenario_all_together(data):
-    # combine all other scenarios
-    data = scenario_stock_prices(data)
-    data = scenario_co2_limit(data)
-    data = scenario_north_process_caps(data)
-    return data
-
+def scenario_generator(scenario_name, pv_cost, bat_cost, diesel_gen_cost, 
+                       fuel_cost):
+    def scenario(data):
+        # short-hands for individual DataFrames
+        com = data['commodity']
+        pro = data['process']
+        sto = data['storage']
+        
+        # row indices for entries
+        diesel = ('StRupertMayer', 'Diesel', 'Stock')
+        pv_plant = ('StRupertMayer', 'Photovoltaics')
+        diesel_gen = ('StRupertMayer', 'Diesel generator')
+        battery = ('StRupertMayer', 'Battery', 'Electricity')
+        
+        # change values to function argument
+        pro.loc[pv_plant, 'inv-cost'] = pv_cost  # EUR/kW
+        sto.loc[battery, 'inv-cost-c'] = bat_cost  # EUR/kWh
+        pro.loc[diesel_gen, 'inv-cost'] = diesel_gen_cost  # EUR/kW
+        com.loc[diesel, 'price'] = fuel_cost  # EUR/kWh
+        
+        return data
+    scenario.__name__ = scenario_name
+    return scenario
 
 def prepare_result_directory(result_name):
     """ create a time stamped directory within the result folder """
@@ -100,7 +89,7 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
     log_filename = os.path.join(result_dir, '{}.log').format(sce)
 
     # solve model and read results
-    optim = SolverFactory('glpk')  # cplex, glpk, gurobi, ...
+    optim = SolverFactory('gurobi')  # cplex, glpk, gurobi, ...
     optim = setup_solver(optim, logfile=log_filename)
     result = optim.solve(prob, tee=True)
 
@@ -117,7 +106,8 @@ def run_scenario(input_file, timesteps, scenario, result_dir, plot_periods={}):
         prob, 
         os.path.join(result_dir, '{}'.format(sce)),
         plot_title_prefix=sce.replace('_', ' ').title(),
-        periods=plot_periods)
+        periods=plot_periods, power_unit='kW', energy_unit='kWh',
+        figure_size=(24,4))
     return prob
 
 if __name__ == '__main__':
@@ -126,32 +116,47 @@ if __name__ == '__main__':
     result_dir = prepare_result_directory(result_name)  # name + time stamp
 
     # simulation timesteps
-    (offset, length) = (5000, 10*24)  # time step selection
+    (offset, length) = (0, 745)  # time step selection
     timesteps = range(offset, offset+length+1)
     
     # plotting timesteps
     periods = {
-        #'spr': range(1000, 1000+24*7),
-        #'sum': range(3000, 3000+24*7),
-        'aut': range(5000, 5000+24*7),
-        #'win': range(7000, 7000+24*7),
+        '01-jan': range(   1,  745),
+        # '02-feb': range( 745, 1417),
+        # '03-mar': range(1417, 2161),
+        # '04-apr': range(2161, 2881),
+        # '05-may': range(2881, 3625),
+        # '06-jun': range(3625, 4345),
+        # '07-jul': range(4345, 5089),
+        # '08-aug': range(5089, 5833),
+        # '09-sep': range(5833, 6553),
+        # '10-oct': range(6553, 7297),
+        # '11-nov': range(7297, 8017),
+        # '12-dec': range(8017, 8761)
     }
     
     # add or change plot colors
     my_colors = {
-        'South': (230, 200, 200),
-        'Mid': (200, 230, 200),
-        'North': (200, 200, 230)}
+        'Demand': (0, 0, 0),
+        'Diesel generator': (218, 215, 203),
+        'Electricity': (0, 51, 89),
+        'Photovoltaics': (0, 101, 189),
+        'Storage': (100, 160, 200)}
     for country, color in my_colors.items():
         urbs.COLORS[country] = color
 
     # select scenarios to be run
     scenarios = [
-        scenario_base,
-        scenario_stock_prices,
-        scenario_co2_limit,
-        scenario_north_process_caps,
-        scenario_all_together]
+        scenario_generator('s01', 2000, 1000, 200, 0.09),
+        scenario_generator('s02', 1500, 1000, 200, 0.09),
+        scenario_generator('s03', 1000, 1000, 200, 0.09),
+        scenario_generator('s04',  500, 1000, 200, 0.09),
+        scenario_generator('s05', 1000,  500, 200, 0.09),
+        scenario_generator('s06',  500,  500, 200, 0.09),
+        scenario_generator('s07', 1000,  500, 200, 0.09),
+        scenario_generator('s08',  500,  500, 200, 0.09),
+        scenario_generator('s09',  500,  500, 200, 0.18),
+        scenario_generator('s10',  500,  500, 200, 0.27)]
 
     for scenario in scenarios:
         prob = run_scenario(input_file, timesteps, scenario, 
