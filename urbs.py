@@ -1734,7 +1734,7 @@ def get_constants(instance):
     return costs, cpro, ctra, csto
 
 
-def get_timeseries(instance, com, sit, timesteps=None):
+def get_timeseries(instance, com, sites, timesteps=None):
     """Return DataFrames of all timeseries referring to given commodity
 
     Usage:
@@ -1744,7 +1744,7 @@ def get_timeseries(instance, com, sit, timesteps=None):
     Args:
         instance: a urbs model instance
         com: a commodity
-        sit: a site
+        sites: a site name (str) or a list of site names
         timesteps: optional list of timesteps, defaults: all modelled timesteps
 
     Returns:
@@ -1761,17 +1761,23 @@ def get_timeseries(instance, com, sit, timesteps=None):
         # default to all simulated timesteps
         timesteps = sorted(get_entity(instance, 'tm').index)
 
+    # wrap
+    if isinstance(sites, basestring):
+        sites = [sites]
+
     # DEMAND
     # default to zeros if commodity has no demand, get timeseries
     try:
-        demand = instance.demand.loc[timesteps][sit, com]
+        demand = (instance.demand.loc[timesteps][sites]
+                                 .stack().sum(axis=1)
+                                 .unstack()[com])
     except KeyError:
         demand = pd.Series(0, index=timesteps)
     demand.name = 'Demand'
 
     # STOCK
     eco = get_entity(instance, 'e_co_stock').unstack()['Stock']
-    eco = eco.xs(sit, level='sit').unstack().fillna(0)
+    eco = aggregate_sites(eco, sites).unstack(level='com').fillna(0)
     try:
         stock = eco.loc[timesteps][com]
     except KeyError:
@@ -1790,10 +1796,10 @@ def get_timeseries(instance, com, sit, timesteps=None):
         # DSM happened (dsmup implies that dsmdo must be non-zero, too)
         # so the demand will be modified by the difference of DSM up and
         # DSM down uses
-        dsmup = dsmup.xs(sit, level = 'sit')
+        dsmup = aggregate_sites(dsmup, sites)
         dsmup = dsmup.xs(com, level = 'com')
 
-        dsmdo = dsmdo.xs(sit, level = 'sit')
+        dsmdo = aggregate_sites(dsmdo, sites)
         dsmdo = dsmdo.xs(com, level = 'com')
         #  series by summing the first time step set
         dsmdo = dsmdo.unstack().sum(axis=0)
@@ -1813,15 +1819,18 @@ def get_timeseries(instance, com, sit, timesteps=None):
     # sit. Keep only entries with non-zero values and unstack process column.
     # Finally, slice to the desired timesteps.
     epro = get_entities(instance, ['e_pro_in', 'e_pro_out'])
-    epro = epro.xs(sit, level='sit').xs(com, level='com')
+    created = get_entity(instance, 'e_pro_out')
+    created = aggregate_sites(created, sites).xs(com, level='com')
     try:
-        created = epro[epro['e_pro_out'] > 0]['e_pro_out'].unstack(level='pro')
+        created = created.unstack(level='pro')
         created = created.loc[timesteps].fillna(0)
     except KeyError:
         created = pd.DataFrame(index=timesteps)
 
+    consumed = get_entity(instance, 'e_pro_out')
+    consumed = aggregate_sites(consumed, sites).xs(com, level='com')
     try:
-        consumed = epro[epro['e_pro_in'] > 0]['e_pro_in'].unstack(level='pro')
+        consumed = consumed.unstack(level='pro')
         consumed = consumed.loc[timesteps].fillna(0)
     except KeyError:
         consumed = pd.DataFrame(index=timesteps)
@@ -1876,6 +1885,10 @@ def get_timeseries(instance, com, sit, timesteps=None):
     dsm = pd.concat((demand.rename('Original Demand'), demanddelta), axis=1)
 
     return created, consumed, stored, imported, exported, derivative, dsm
+
+
+def aggregate_sites(df, sites):
+    return df.unstack(level='sit').fillna(0)[sites].sum(axis=1)
 
 
 def report(instance, filename, commodities=None, sites=None):
