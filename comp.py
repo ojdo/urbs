@@ -58,6 +58,12 @@ def deduplicate_legend(handles, labels):
     # also, sort both lists accordingly            
     new_labels, new_handles = (list(t) for t in zip(*sorted(zip(new_labels, new_handles))))
     return (new_handles, new_labels)
+    
+def group_bar_plots(ax, group_size=2):
+    handles, labels = ax.get_legend_handles_labels()
+    for column, handle in enumerate(handles):
+        for row, patch in enumerate(handle.patches):
+            patch.set_y(patch.get_y() + (-1)**row * 0.2^0)
 
 def compare_scenarios(result_files, output_filename):
     """ Create report sheet and plots for given report spreadsheets.
@@ -183,11 +189,11 @@ def compare_scenarios(result_files, output_filename):
     ax1 = plt.subplot(gs[1])
     created_colors = [urbs.to_color(commodity) for commodity in created.columns]
     bp1 = created.plot(ax=ax1, kind='barh', stacked=True, color=created_colors,
-                       linewidth=0, legend=False)
+                       linewidth=0, width=.5)
     if not consumed.empty:
         consumed_colors = [urbs.to_color(commodity) for commodity in consumed.columns]
         bp1a = consumed.plot(ax=ax1, kind='barh', stacked=True, color=consumed_colors,
-                             linewidth=0, legend=False)
+                             linewidth=0, width=.5)
     
     ax2 = plt.subplot(gs[2])
     stored_colors = [urbs.to_color(commodity) for commodity in sto_sums.columns]
@@ -197,6 +203,7 @@ def compare_scenarios(result_files, output_filename):
     # remove scenario names from other bar plots
     for ax in [ax1, ax2]:
         ax.set_yticklabels('')
+        group_bar_plots(ax)
     
     # set limits and ticks for both axes
     for ax in [ax0, ax1, ax2]:
