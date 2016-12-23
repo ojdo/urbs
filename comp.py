@@ -281,12 +281,10 @@ if __name__ == '__main__':
     my_colors = {
         'Battery': (100, 160, 200),
         'Demand': (0, 0, 0),
-        'Gas-fired boiler': (218, 215, 203),
         'Gas boiler': (218, 215, 203),
         'Feed-in': (62, 173, 0),
         'Heating rod': (180, 50, 15),
         'Heatpump': (227, 114, 34),
-        'P2H': (180, 50, 15),
         'Photovoltaics': (0, 101, 189),
         'Purchase': (0, 119, 138),
         'Solarthermal': (255, 220, 0),
