@@ -26,6 +26,7 @@ def get_most_recent_entry(search_dir):
     entries.sort(key=lambda x: os.path.getmtime(x))
     return entries[-1]
 
+
 def glob_result_files(folder_name):
     """ Glob result spreadsheets from specified folder. 
     
@@ -38,7 +39,8 @@ def glob_result_files(folder_name):
     glob_pattern = os.path.join(folder_name, 's*.xlsx')
     result_files = sorted(glob.glob(glob_pattern))
     return result_files
-    
+
+
 def deduplicate_legend(handles, labels):
     """ Remove double entries from figure legend.
     
@@ -58,12 +60,32 @@ def deduplicate_legend(handles, labels):
     # also, sort both lists accordingly            
     new_labels, new_handles = (list(t) for t in zip(*sorted(zip(new_labels, new_handles))))
     return (new_handles, new_labels)
-    
-def group_bar_plots(ax, group_size=2):
+
+
+def group_hbar_plots(ax, group_size, inner_sep=None):
+    """
+    Args:
+        ax: matplotlib axis
+        group_size (int): how many bars to group together
+        inner_sep (float): vertical spacing within group (optional)
+    """
     handles, labels = ax.get_legend_handles_labels()
+    bar_height = handles[0][0].get_height()  # assumption: all bars identical 
+    
+    if not inner_sep:
+        inner_sep = 0.5 * (1 - bar_height)
+    
     for column, handle in enumerate(handles):
         for row, patch in enumerate(handle.patches):
-            patch.set_y(patch.get_y() + (-1)**row * 0.2^0)
+            group_number, row_within_group = divmod(row, group_size)
+            
+            group_offset = (group_number * group_size
+                            + 0.5 * (group_size - 1) * (1 - inner_sep)
+                            - 0.5 * (group_size * bar_height))
+            
+            patch.set_y(row_within_group * (bar_height + inner_sep)
+                        + group_offset)
+
 
 def compare_scenarios(result_files, output_filename):
     """ Create report sheet and plots for given report spreadsheets.
@@ -203,7 +225,7 @@ def compare_scenarios(result_files, output_filename):
     # remove scenario names from other bar plots
     for ax in [ax1, ax2]:
         ax.set_yticklabels('')
-        group_bar_plots(ax)
+        group_hbar_plots(ax, group_size=2, inner_sep=0.0)
     
     # set limits and ticks for both axes
     for ax in [ax0, ax1, ax2]:
@@ -278,8 +300,8 @@ if __name__ == '__main__':
         'Purchase': (0, 51, 89),
         'Variable': (128, 153, 172),
     }
-    for country, color in my_colors.items():
-        urbs.COLORS[country] = color
+    for name, color in my_colors.items():
+        urbs.COLORS[name] = color
     
     directories = sys.argv[1:]
     if not directories:
