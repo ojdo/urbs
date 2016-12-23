@@ -20,11 +20,9 @@ This branch contains a small example study with one site, custom run script and 
 
 <a href="img/s02-pv-Heat-House-08-aug.png"><img src="img/s02-pv-Heat-House-08-aug.png" alt="Timeseries plot of month August for heat generation in scenario s02: cheap PV"></a>
 
-<a href="img/s02-pv-Heat-House-12-dec.png"><img src="img/s02-pv-Heat-House-12-dec-aug.png" alt="Timeseries plot of month December for heat generation in scenario s02: cheap PV"></a>
+<a href="img/s02-pv-Heat-House-12-dec.png"><img src="img/s02-pv-Heat-House-12-dec.png" alt="Timeseries plot of month December for heat generation in scenario s02: cheap PV"></a>
 
 ## Background
-
-> *Note: italic words refer to sheet names or column labels in the input file `1house.xlsx`*
 
 The study object is an exemplary house which has to satisfy its hourly demand for electricity (4047 kWh/a, 462 W average load) and heat (6115 kWh/a, 698 W average load). It can choose to install and operate any subset from a suite of common technologies and energy sources. 
 
