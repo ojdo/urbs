@@ -14,15 +14,15 @@ This branch contains a small example study with one site, custom run script and 
 
 ### Timeseries: electricity
 
-<a href="img/s02-cheap-pv-Electricity-House-08-aug.png"><img src="img/s02-cheap-pv-Electricity-House-08-aug.png" alt="Timeseries plot of month August for electricity generation in scenario s02: cheap PV"></a>
+<a href="img/s10-limit-co2-50-Electricity-House-08-aug.png"><img src="img/s10-limit-co2-50-Electricity-House-08-aug.png" alt="Timeseries plot of month August for electricity generation in scenario s10: CO2 limit 50%"></a>
 
-<a href="img/s02-cheap-pv-Electricity-House-12-dec.png"><img src="img/s02-cheap-pv-Electricity-House-12-dec.png" alt="Timeseries plot of month December for electricity generation in scenario s02: cheap PV"></a>
+<a href="img/s10-limit-co2-50-Electricity-House-12-dec.png"><img src="img/s10-limit-co2-50-Electricity-House-12-dec.png" alt="Timeseries plot of month December for electricity generation in scenario s10: CO2 limit 50%"></a>
 
 ### Timeseries: heat
 
-<a href="img/s02-cheap-pv-Heat-House-08-aug.png"><img src="img/s02-cheap-pv-Heat-House-08-aug.png" alt="Timeseries plot of month August for heat generation in scenario s02: cheap PV"></a>
+<a href="img/s10-limit-co2-50-Heat-House-08-aug.png"><img src="img/s10-limit-co2-50-Heat-House-08-aug.png" alt="Timeseries plot of month August for heat generation in scenario s10: CO2 limit 50%"></a>
 
-<a href="img/s02-cheap-pv-Heat-House-12-dec.png"><img src="img/s02-cheap-pv-Heat-House-12-dec.png" alt="Timeseries plot of month December for heat generation in scenario s02: cheap PV"></a>
+<a href="img/s10-limit-co2-50-Heat-House-12-dec.png"><img src="img/s10-limit-co2-50-Heat-House-12-dec.png" alt="Timeseries plot of month December for heat generation in scenario s10: CO2 limit 50%"></a>
 
 ## Background
 
