@@ -8,9 +8,6 @@ import pandas as pd
 import urbs
 import sys
 
-# INIT
-
-
 
 def get_most_recent_entry(search_dir):
     """ Return most recently modified entry from given directory.
@@ -63,16 +60,29 @@ def deduplicate_legend(handles, labels):
 
 
 def group_hbar_plots(ax, group_size, inner_sep=None):
-    """
+    """ Group bars of a horizontal barplot closer together.
+
+    Given an existing horizontal bar plot handle ax, move bars of a given group
+    size (>=2) closer together, reducing the distance within the bars of a
+    group, but increasing the distance between different groups.
+
+    By default, bars are placed within a coordinate system 1 unit apart. The
+    space between two bars has size 1 - bar_height, which can be specified in
+    matplotlib (and pandas) using the `width` argument.
+
     Args:
         ax: matplotlib axis
         group_size (int): how many bars to group together
         inner_sep (float): vertical spacing within group (optional)
+                           default: reduce the distance to a half
+
+    Returns:
+        Nothing
     """
     handles, labels = ax.get_legend_handles_labels()
-    bar_height = handles[0][0].get_height()  # assumption: all bars identical 
+    bar_height = handles[0][0].get_height()  # assumption: identical for all
     
-    if not inner_sep:
+    if inner_sep is None:
         inner_sep = 0.5 * (1 - bar_height)
     
     for column, handle in enumerate(handles):
